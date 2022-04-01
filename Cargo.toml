@@ -1,0 +1,15 @@
+[package]
+name = "gosh"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dependencies.goscript-engine]
+git = "https://github.com/nyxkrage/goscript"
+branch = "nyx"
+version = "0.1.0"
+
+[features]

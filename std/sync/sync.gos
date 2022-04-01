@@ -1,0 +1,92 @@
+package sync
+
+import "unsafe"
+
+type ffiMutex interface {
+    new() unsafe.Pointer
+    lock(unsafe.Pointer)
+    unlock(unsafe.Pointer)
+}
+
+type ffiRWMutex interface {
+    new() unsafe.Pointer
+    r_lock(unsafe.Pointer)
+    r_unlock(unsafe.Pointer)
+    w_lock(unsafe.Pointer)
+    w_unlock(unsafe.Pointer)
+}
+
+// A Locker represents an object that can be locked and unlocked.
+type Locker interface {
+	Lock()
+	Unlock()
+}
+
+// A Mutex is a mutual exclusion lock.
+// The zero value for a Mutex is an unlocked mutex.
+//
+// A Mutex must not be copied after first use.
+type Mutex struct {
+    f ffiMutex
+    handle unsafe.Pointer
+}
+
+// Lock locks m.
+// If the lock is already in use, the calling goroutine
+// blocks until the mutex is available.
+func (m *Mutex) Lock() {
+    if m.handle == nil {
+        m.f = ffi(ffiMutex, "sync.mutex")
+        m.handle = m.f.new()
+        
+    }
+    m.f.lock(m.handle)
+}
+
+
+// Unlock unlocks m.
+// It is a run-time error if m is not locked on entry to Unlock.
+//
+// A locked Mutex is not associated with a particular goroutine.
+// It is allowed for one goroutine to lock a Mutex and then
+// arrange for another goroutine to unlock it.
+func (m *Mutex) Unlock() {
+   m.f.unlock(m.handle)
+}
+
+
+// A RWMutex is a reader/writer mutual exclusion lock.
+// The lock can be held by an arbitrary number of readers or a single writer.
+// The zero value for a RWMutex is an unlocked mutex.
+//
+// A RWMutex must not be copied after first use.
+type RWMutex struct {
+    f ffiRWMutex
+    handle unsafe.Pointer
+}
+
+func (rw *RWMutex) RLock() {
+    if rw.handle == nil {
+        rw.f = ffi(ffiRWMutex, "sync.rw_mutex")
+        rw.handle = rw.f.new()
+        
+    }
+    rw.f.r_lock(rw.handle)
+}
+
+func (rw *RWMutex) RUnlock() {
+    rw.f.r_unlock(rw.handle)
+}
+
+func (rw *RWMutex) Lock() {
+    if rw.handle == nil {
+        rw.f = ffi(ffiRWMutex, "sync.rw_mutex")
+        rw.handle = rw.f.new()
+        
+    }
+    rw.f.w_lock(rw.handle)
+}
+
+func (rw *RWMutex) Unlock() {
+    rw.f.w_unlock(rw.handle)
+}
